@@ -584,7 +584,16 @@ class openMDF:
                 # print(signal_for_SeatBelt)
                 # print(signal_for_ACCButtInfo_main)
                 # print(signal_for_ACCButtInfo_cancel)
-                
+                sample_data = {}
+                for key in data_dict.keys():
+                    sample_data[key] = data_dict[key]['samples']
+                index_list = []
+                index_num = 0
+                while index_num < = 120:
+                    index_list.append(index_num)
+                    index_num += 0.01
+                this_data = pd.DataFrame(sample_data, index=index_num)
+                print(this.data)
             self.close_file()
 
 # 获取全部的文件路径
