@@ -2,6 +2,7 @@ from asammdf import MDF
 import json,os,time,sys
 import numpy as np
 import pandas as pd
+from pandas import Series
 import plotly.graph_objs as go
 import plotly as py
 import plotly.offline as pltoff
@@ -34,7 +35,7 @@ class openMDF:
             timestamp = data_2.timestamps.tolist()[data_1.index(range_min)]
             new_dict['samples'].append(sample)
             new_dict['timestamps'].append(timestamp)
-            norm += 0.5
+            norm += 0.01
         return new_dict
 
     def task(self):
@@ -97,7 +98,7 @@ class openMDF:
                 # ABS激活
                 signal_for_ABS = self.mf.get('BCS_ABSActiveSt')
                 # TCS（Traction Control System）激活
-                signal_for_TCS = self.mf.get('BCS_TCSActiveSt')
+                signal_for_TCS_Activate = self.mf.get('BCS_TCSActiveSt')
                 # HDC（Hill Descent Control）打开或激活
                 signal_for_HDC = self.mf.get('BCS_HDCCtrlSt')
                 # EPB拉起
@@ -116,7 +117,7 @@ class openMDF:
                 # ESP关闭
                 signal_for_ESP = self.mf.get('BCS_VDCOff')
                 # TCS关闭
-                signal_for_TCS = self.mf.get('BCS_TCSOff')
+                signal_for_TCS_Off = self.mf.get('BCS_TCSOff')
                 # 溜坡
                 ## 左前
                 signal_for_FL = self.mf.get('BCS_FLWheelRotatedDirection')
@@ -144,30 +145,32 @@ class openMDF:
                 print(e)
                 return False
             else:
+                print('数据获取完毕')
                 data_dict = {
-                    'AEB': {'samples': [], 'timestamps': []},
-                    'VDC': {'samples': [], 'timestamps': []},
-                    'ABS': {'samples': [], 'timestamps': []},
-                    'TCS': {'samples': [], 'timestamps': []},
-                    'HDC': {'samples': [], 'timestamps': []},
-                    'EPB': {'samples': [], 'timestamps': []},
-                    'cycle': {'samples': [], 'timestamps': []},
-                    'engine': {'samples': [], 'timestamps': []},
-                    'BrakeOverHeat': {'samples': [], 'timestamps': []},
-                    'Front_angle_radar': {'samples': [], 'timestamps': []},
-                    'ESP': {'samples': [], 'timestamps': []},
-                    'TCS': {'samples': [], 'timestamps': []},
-                    'FLWheelRotated': {'samples': [], 'timestamps': []},
-                    'RLWheelRotated': {'samples': [], 'timestamps': []},
-                    'FRWheelRotated': {'samples': [], 'timestamps': []},
-                    'RRWheelRotated': {'samples': [], 'timestamps': []},
-                    'NoBrakeForce': {'samples': [], 'timestamps': []},
-                    'Over_ride': {'samples': [], 'timestamps': []},
-                    'GearLvl': {'samples': [], 'timestamps': []},
-                    'Door': {'samples': [], 'timestamps': []},
-                    'SeatBelt': {'samples': [], 'timestamps': []},
-                    'ACCButtInfo_main': {'samples': [], 'timestamps': []},
-                    'ACCButtInfo_cancel': {'samples': [], 'timestamps': []}
+                    'AEB': {'samples': [], 'timestamps': [], 'condition':{'No_request': 0, 'Request': 1}},
+                    'VDC': {'samples': [], 'timestamps': [], 'condition':{'Not_active': 0, 'Active': 1}},
+                    'ABS': {'samples': [], 'timestamps': [], 'condition':{'Not_active': 0, 'Active': 1}},
+                    'TCS_Activate': {'samples': [], 'timestamps': [], 'condition':{'On': 0, 'Off': 1}},
+                    'HDC': {'samples': [], 'timestamps': [], 'condition':{'Off': 0, 'On_active_braking': 1, 'On_not_active_braking': 2}},
+                    'EPB': {'samples': [], 'timestamps': [], 'condition':{'Brake_pedal_not_applied': 0, 'Brake_pedal_applied': 1}},
+                    'cycle': {'samples': [], 'timestamps': [], 'condition':{'Not_active': 0, 'Released': 1, 'Applied': 2}},
+                    'engine': {'samples': [], 'timestamps': [], 'condition':{'Not_ready': 0, 'Ready': 1}},
+                    'BrakeOverHeat': {'samples': [], 'timestamps': [], 'condition':{'Not_high': 0, 'Temp_too_high': 1}},
+                    'Front_angle_radar': {'samples': [], 'timestamps': [], 'condition':{'on': 0, 'sensor_blocked': 1, 'Temporary_Error': 2, 'System_Error': 3}},
+                    'ESP': {'samples': [], 'timestamps': [], 'condition':{'On': 0, 'Off': 1}},
+                    'TCS_Off': {'samples': [], 'timestamps': [], 'condition':{'On': 0, 'Off': 1}},
+                    'FLWheelRotated': {'samples': [], 'timestamps': [], 'condition':{'Forward': 0, 'Backward': 1}},
+                    'RLWheelRotated': {'samples': [], 'timestamps': [], 'condition':{'Forward': 0, 'Backward': 1}},
+                    'FRWheelRotated': {'samples': [], 'timestamps': [], 'condition':{'Forward': 0, 'Backward': 1}},
+                    'RRWheelRotated': {'samples': [], 'timestamps': [], 'condition':{'Forward': 0, 'Backward': 1}},
+                    'NoBrakeForce': {'samples': [], 'timestamps': [], 'condition':{'Exist_brake_force': 0, 'No_brakeforce': 1}},
+                    'Over_ride': {'samples': [], 'timestamps': [], 'condition':{'Off_mode': 0, 'passive_mode': 1, 'Standby_mode': 2, 'Active_control_mode': 3,'Brake_only_mode': 4,'Override': 5,'Not_used': 6,'Failure_mode': 7}},
+                    'GearLvl': {'samples': [], 'timestamps': [], 'condition':{'Invalid': 0, "D_Drive gear": 1, "N_Neutral_gear": 2, "R_Reverse_gear": 3,'P_Park_gear': 4}},
+                    'Door': {'samples': [], 'timestamps': [], 'condition':{'Closed': 0, 'Open': 1}},
+                    'SeatBelt': {'samples': [], 'timestamps': [], 'condition':{'Fastened': 0, 'Unfastened': 1, 'Not_used': 2, 'Invalid': 3}},
+                    
+                    # 'ACCButtInfo_main': {'samples': [], 'timestamps': [], 'condition':{'No_request': 0, 'Request': 1, 'key': 2, 'key': 3}},
+                    # 'ACCButtInfo_cancel': {'samples': [], 'timestamps': [], 'condition':{'No_request': 0, 'Request': 1, 'key': 2, 'key': 3}}
                 }
                 data_for_AEB = self.find_odometer([x-signal_for_AEB.timestamps.tolist()[0] for x in signal_for_AEB.timestamps.tolist()],signal_for_AEB)
                 # 1 {'samples': [], 'timestamps': []}
@@ -198,14 +201,14 @@ class openMDF:
                     else:
                         data_dict['ABS']['samples'].append(-1)
                 # 4  0=On 1=Off
-                data_for_TCS = self.find_odometer([x-signal_for_TCS.timestamps.tolist()[0] for x in signal_for_TCS.timestamps.tolist()],signal_for_TCS)
-                for sample in data_for_TCS['samples']:
+                data_for_TCS_activate = self.find_odometer([x-signal_for_TCS_Activate.timestamps.tolist()[0] for x in signal_for_TCS_Activate.timestamps.tolist()],signal_for_TCS_Activate)
+                for sample in data_for_TCS_activate['samples']:
                     if sample == b'On':
-                        data_dict['TCS']['samples'].append(0)
+                        data_dict['TCS_Activate']['samples'].append(0)
                     elif sample == b'Off':
-                        data_dict['TCS']['samples'].append(1)
+                        data_dict['TCS_Activate']['samples'].append(1)
                     else:
-                        data_dict['TCS']['samples'].append(-1)
+                        data_dict['TCS_Activate']['samples'].append(-1)
                 # 5  BCS_HDCCtrlSt
                 """
                 0=Off
@@ -221,8 +224,6 @@ class openMDF:
                         data_dict['HDC']['samples'].append(1)
                     elif sample == b'On not active braking':
                         data_dict['HDC']['samples'].append(2)
-                    elif sample == b'Not used':
-                        data_dict['HDC']['samples'].append(3)
                     else:
                         data_dict['HDC']['samples'].append(-1)
                 # 6  EBB_BrkPedalApplied
@@ -283,7 +284,7 @@ class openMDF:
                         data_dict['BrakeOverHeat']['samples'].append(1)
                     else:
                         data_dict['BrakeOverHeat']['samples'].append(-1)
-                10 FRR_ErrSt
+                # 10 FRR_ErrSt
                 """
                 0x0=on
                 0x1=sensor blocked
@@ -321,14 +322,14 @@ class openMDF:
                 0=On
                 1=Off
                 """
-                data_for_TCS = self.find_odometer([x-signal_for_TCS.timestamps.tolist()[0] for x in signal_for_TCS.timestamps.tolist()],signal_for_TCS)
-                for sample in data_for_TCS['samples']:
+                data_for_TCS_Off = self.find_odometer([x-signal_for_TCS_Off.timestamps.tolist()[0] for x in signal_for_TCS_Off.timestamps.tolist()],signal_for_TCS_Off)
+                for sample in data_for_TCS_Off['samples']:
                     if sample == b'On':
-                        data_dict['TCS']['samples'].append(0)
+                        data_dict['TCS_Off']['samples'].append(0)
                     elif sample == b'Off':
-                        data_dict['TCS']['samples'].append(1)
+                        data_dict['TCS_Off']['samples'].append(1)
                     else:
-                        data_dict['TCS']['samples'].append(-1)
+                        data_dict['TCS_Off']['samples'].append(-1)
                 # 12 BCS_FLWheelRotatedDirection
                 """
                 0=Forward
@@ -512,18 +513,18 @@ class openMDF:
                 0=Normal
                 1=Abnormal
                 '''
-                data_for_ACCButtInfo_main = self.find_odometer([x-signal_for_ACCButtInfo_main.timestamps.tolist()[0] for x in signal_for_ACCButtInfo_main.timestamps.tolist()],signal_for_ACCButtInfo_main)
-                for sample in data_for_ACCButtInfo_main['samples']:
-                    if sample == b'':
-                        data_dict['ACCButtInfo_main']['samples'].append(0)
-                    elif sample == b"":
-                        data_dict['ACCButtInfo_main']['samples'].append(1)
-                    elif sample == b"":
-                        data_dict['ACCButtInfo_main']['samples'].append(2)
-                    elif sample == b"":
-                        data_dict['ACCButtInfo_main']['samples'].append(3)
-                    else:
-                        data_dict['ACCButtInfo_main']['samples'].append(-1)
+                # data_for_ACCButtInfo_main = self.find_odometer([x-signal_for_ACCButtInfo_main.timestamps.tolist()[0] for x in signal_for_ACCButtInfo_main.timestamps.tolist()],signal_for_ACCButtInfo_main)
+                # for sample in data_for_ACCButtInfo_main['samples']:
+                #     if sample == b'':
+                #         data_dict['ACCButtInfo_main']['samples'].append(0)
+                #     elif sample == b"":
+                #         data_dict['ACCButtInfo_main']['samples'].append(1)
+                #     elif sample == b"":
+                #         data_dict['ACCButtInfo_main']['samples'].append(2)
+                #     elif sample == b"":
+                #         data_dict['ACCButtInfo_main']['samples'].append(3)
+                #     else:
+                #         data_dict['ACCButtInfo_main']['samples'].append(-1)
                 # 22 EMS_ACCButtInfo
                 '''
                 Bit0: main switch
@@ -547,18 +548,18 @@ class openMDF:
                 0=Normal
                 1=Abnormal
                 '''
-                data_for_ACCButtInfo_cancel = self.find_odometer([x-signal_for_ACCButtInfo_cancel.timestamps.tolist()[0] for x in signal_for_ACCButtInfo_cancel.timestamps.tolist()],signal_for_ACCButtInfo_cancel)
-                for sample in data_for_ACCButtInfo_cancel['samples']:
-                    if sample == b'':
-                        data_dict['ACCButtInfo_cancel']['samples'].append(0)
-                    elif sample == b"":
-                        data_dict['ACCButtInfo_cancel']['samples'].append(1)
-                    elif sample == b"":
-                        data_dict['ACCButtInfo_cancel']['samples'].append(2)
-                    elif sample == b"":
-                        data_dict['ACCButtInfo_cancel']['samples'].append(3)
-                    else:
-                        data_dict['ACCButtInfo_cancel']['samples'].append(-1)
+                # data_for_ACCButtInfo_cancel = self.find_odometer([x-signal_for_ACCButtInfo_cancel.timestamps.tolist()[0] for x in signal_for_ACCButtInfo_cancel.timestamps.tolist()],signal_for_ACCButtInfo_cancel)
+                # for sample in data_for_ACCButtInfo_cancel['samples']:
+                #     if sample == b'':
+                #         data_dict['ACCButtInfo_cancel']['samples'].append(0)
+                #     elif sample == b"":
+                #         data_dict['ACCButtInfo_cancel']['samples'].append(1)
+                #     elif sample == b"":
+                #         data_dict['ACCButtInfo_cancel']['samples'].append(2)
+                #     elif sample == b"":
+                #         data_dict['ACCButtInfo_cancel']['samples'].append(3)
+                #     else:
+                #         data_dict['ACCButtInfo_cancel']['samples'].append(-1)
                 #######################################################
                 
                 
@@ -589,11 +590,52 @@ class openMDF:
                     sample_data[key] = data_dict[key]['samples']
                 index_list = []
                 index_num = 0
-                while index_num < = 120:
+                print('开始构建DataFrame')
+                this_data = pd.DataFrame(sample_data)
+                for i in range(len(this_data.index.tolist())):
                     index_list.append(index_num)
                     index_num += 0.01
-                this_data = pd.DataFrame(sample_data, index=index_num)
-                print(this.data)
+                this_data.index = Series(index_list)
+                # this_data = pd.DataFrame(sample_data, index=index_num)
+                # 判断条件
+                # 开始判断，得到结果后添加新的column
+                message_list = []
+                columns_list = list(this_data)
+                print('开始计算单一时间的状态')
+                for indexs in this_data.index:
+                    # 单行数据转化列表
+                    one_result = []
+                    one_data = this_data.loc[indexs].values[0:-1].tolist()
+                    for i in range(len(one_data)):
+                        if i != 7 and i != 18:
+                            if one_data[i] == 0:
+                                pass
+                            else:
+                                for key,value in data_dict[columns_list[i]]['condition'].items():
+                                    if one_data[i] == value:
+                                        one_result.append(columns_list[i] + ': ' + key)
+                                        break
+                                    # else:
+                                    #     one_result.appen(columns_list[i] + ': ' + '错误未定义')
+                        else:
+                            if one_data[i] == 1:
+                                pass
+                            else:
+                                for key,value in data_dict[columns_list[i]]['condition'].items():
+                                    if one_data[i] == value:
+                                        one_result.append(columns_list[i] + ': ' + key)
+                                        break
+                    if one_result == []:
+                        message = '功能运行正常。'
+                    else:
+                        message = ';'.join(one_result)
+                    message_list.append(message)
+                this_data['Final_resule'] = message_list
+                
+                print(this_data)
+                this_data.to_csv('./resule_data.csv')
+                # print(this_data)
+                # print(index_list)
             self.close_file()
 
 # 获取全部的文件路径
@@ -612,15 +654,17 @@ def file_path_list(path):
 
 if __name__ == "__main__":
     base_file_path = 'G:/loc/szh/DA/Driving/System_APP/02_GAC/01_A18/DASy/'
-    file_list = file_path_list(base_file_path)
+    # file_list = file_path_list(base_file_path)
+    file_list = [r'G:\loc\szh\DA\Driving\System_APP\02_GAC\01_A18\BAP\000_dataexchange\20201112_6914_in_out_ramp\GAC_A18_2020-11-12_11-32_37_0005.MF4']
     i = 0
     while i < 1:
         i += 1
         try:
             file_path = file_list.pop()
+            print(file_path)
         except IndexError as e:
             break
         else:
             file_name = file_path.split('\\')[-1].split('.')[0]
-            mf = openMDF(file_path)
+            mf = openMDF(r'G:\loc\szh\DA\Driving\System_APP\02_GAC\01_A18\BAP\000_dataexchange\20201112_6914_in_out_ramp\GAC_A18_2020-11-12_11-32_37_0005.MF4')
             mf.task()
