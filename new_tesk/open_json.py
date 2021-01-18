@@ -3,9 +3,8 @@ import numpy as np
 import pandas as pd
 
 class OpenFile:
-    def __init__(self, path, signal_list=None):
+    def __init__(self, path):
         self.data = self.open_file(path)
-        self.data_analysis(signal_list)
     def open_file(self, path):
         try:
             f = open(path, 'r', encoding='utf8').read()
