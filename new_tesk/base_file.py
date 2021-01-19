@@ -24,5 +24,15 @@ if __name__ == "__main__":
                 将单个文件中的单条信息放入其中进行获取
                 '''
                 fa = FcwAeb(value)
-                alert_warning_df = fa.alert_warning()
-                print(alert_warning_df)
+                # alert_warning_df = fa.alert_warning()
+                # approaching_warning_df = fa.approaching_warning()
+                # short_brake_df = fa.short_brake()
+                # prefill_df = fa.prefill()
+                # AEB_df = fa.AEB()
+                # EBA_df = fa.EBA()
+                # AEB_pedestrian_df = fa.AEB_pedestrian()
+                AEB_two_wheeled_vehicle_df = fa.AEB_two_wheeled_vehicle()
+                
+                # print(alert_warning_df)
+
+
