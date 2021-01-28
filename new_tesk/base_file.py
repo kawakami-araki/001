@@ -8,6 +8,7 @@ from open_json import OpenFile
 from myencode import MyEncoder
 from jsonDataGet import get_data
 from FCW_AEB import FcwAeb
+from ILC import ILC
 if __name__ == "__main__":
     base_floder_path = r'C:\Users\FAC2SZH\Desktop\hive_file_code\vms'
     json_data_list = get_data(base_floder_path)
@@ -23,7 +24,7 @@ if __name__ == "__main__":
                 '''
                 将单个文件中的单条信息放入其中进行获取
                 '''
-                fa = FcwAeb(value)
+                # fa = FcwAeb(value)
                 # alert_warning_df = fa.alert_warning()
                 # approaching_warning_df = fa.approaching_warning()
                 # short_brake_df = fa.short_brake()
@@ -31,8 +32,10 @@ if __name__ == "__main__":
                 # AEB_df = fa.AEB()
                 # EBA_df = fa.EBA()
                 # AEB_pedestrian_df = fa.AEB_pedestrian()
-                AEB_two_wheeled_vehicle_df = fa.AEB_two_wheeled_vehicle()
-                
+                # AEB_two_wheeled_vehicle_df = fa.AEB_two_wheeled_vehicle()
+                ilc = ILC(value)
+                # ilc.Transition_to_Take_Over_Request()
+                ilc.ILC_to_seven()
                 # print(alert_warning_df)
 
 

@@ -36,5 +36,5 @@ def get_data(path):
             json_file_data = of.data_analysis(signal_list=signal_list)
             if json_file_data:
                 json_file_data_list.append(json_file_data)
-        break
+        # break
     return json_file_data_list

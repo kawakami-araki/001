@@ -473,7 +473,7 @@ class FcwAeb:
             # 6 速度范围
             'Spd_range': {'key': ["BCS_VehSpd"], 'samples': [], 'timestamps': [], 'condition':{'Normal': 0, 'Out_of_range': 1}},
             # 8 Prefill
-            'Prefill': {'key': ["AEB_OffSt"], 'samples': [], 'timestamps': [], 'condition':{'On': 0, 'Off': 1}},
+            'Prefill': {'key': ["MRR_AEBOffSt"], 'samples': [], 'timestamps': [], 'condition':{'On': 0, 'Off': 1}},
             # 8 VDC
             'VDC': {'key': ["BCS_VDCActiveSt"], 'samples': [], 'timestamps': [], 'condition':{'On': 0, 'Off': 1}},
             # 9 TCS
@@ -1063,5 +1063,4 @@ class FcwAeb:
                         else:
                             result[key]['samples'].append(1)
         this_dataFrame = self.create_DataFrame(result, [3,6])
-        print(this_dataFrame)
         return this_dataFrame
